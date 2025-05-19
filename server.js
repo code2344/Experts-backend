@@ -35,6 +35,15 @@ const questionSchema = new mongoose.Schema({
   assignedTo: String,
 });
 
+const chatSchema = new mongoose.Schema({
+  chatId: String,
+  from: String,
+  text: String,
+  timestamp: { type: Date, default: Date.now }
+});
+
+const Chat = mongoose.model('Chat', chatSchema);
+
 const User = mongoose.model('User', userSchema);
 const Question = mongoose.model('Question', questionSchema);
 
@@ -42,6 +51,20 @@ const Question = mongoose.model('Question', questionSchema);
 app.get('/', (req, res) => {
   res.send('Experts in Anything API');
 });
+// Get chat messages
+app.get('/api/chat/:chatId', async (req, res) => {
+  const messages = await Chat.find({ chatId: req.params.chatId }).sort('timestamp');
+  res.json({ success: true, messages });
+});
+
+// Post a new message
+app.post('/api/chat/:chatId', async (req, res) => {
+  const { from, text } = req.body;
+  const newMsg = new Chat({ chatId: req.params.chatId, from, text });
+  await newMsg.save();
+  res.json({ success: true, message: newMsg });
+});
+
 
 // Signup
 app.post('/api/signup', async (req, res) => {
