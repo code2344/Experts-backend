@@ -87,15 +87,25 @@ app.post('/api/ask', async (req, res) => {
     askedBy,
     assignedTo: expert ? expert.email : null,
   });
+
   app.post('/api/signin', async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email, password });
-  if (user) {
-    res.json({ success: true });
-  } else {
-    res.json({ success: false, message: 'Invalid email or password' });
+  if (!email || !password) {
+    return res.json({ success: false, message: 'Missing email or password' });
+  }
+
+  try {
+    const user = await User.findOne({ email, password });
+    if (user) {
+      return res.json({ success: true });
+    } else {
+      return res.json({ success: false, message: 'Invalid credentials' });
+    }
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
   await newQuestion.save();
