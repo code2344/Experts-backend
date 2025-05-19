@@ -87,6 +87,16 @@ app.post('/api/ask', async (req, res) => {
     askedBy,
     assignedTo: expert ? expert.email : null,
   });
+  app.post('/api/signin', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email, password });
+  if (user) {
+    res.json({ success: true });
+  } else {
+    res.json({ success: false, message: 'Invalid email or password' });
+  }
+});
+
 
   await newQuestion.save();
   res.json({ success: true, question: newQuestion });
