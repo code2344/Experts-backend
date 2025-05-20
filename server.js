@@ -117,7 +117,7 @@ app.post('/api/ask', async (req, res) => {
 // Signin route (keep this OUTSIDE the ask route!)
 app.post('/api/signin', async (req, res) => {
   const { email, password } = req.body;
-  console.log('Received signin:', email, password);
+  console.log('Received signin: with email:', email, 'and password: ', password);
 
   try {
     const user = await User.findOne({ email, password });
