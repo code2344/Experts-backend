@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   expertise: [String],
+  isAdmin: { type: Boolean, default: false } // 👈 Add this
 });
 
 const questionSchema = new mongoose.Schema({
