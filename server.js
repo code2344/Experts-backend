@@ -79,7 +79,22 @@ app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
   // Try to find an expert
-  const expert = await User.findOne({ expertise: topic });
+  function getRelatedTopics(topic) {
+  const lowerTopic = topic.toLowerCase();
+  const related = [lowerTopic];
+  for (const [key, syns] of Object.entries(synonyms)) {
+    if (key === lowerTopic || syns.includes(lowerTopic)) {
+      related.push(key, ...syns);
+    }
+  }
+  return [...new Set(related)];
+}
+
+const relatedTopics = getRelatedTopics(topic);
+const expert = await User.findOne({
+  expertise: { $in: relatedTopics }
+});
+
 
   const newQuestion = new Question({
     topic,
