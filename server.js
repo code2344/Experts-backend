@@ -12,6 +12,22 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+const natural = require('natural');
+const wordnet = new natural.WordNet();
+
+function getSynonyms(word) {
+  return new Promise((resolve, reject) => {
+    wordnet.lookup(word, (results) => {
+      if (!results || results.length === 0) return resolve([]);
+
+      const allSynonyms = new Set();
+      results.forEach(entry => {
+        entry.synonyms.forEach(syn => allSynonyms.add(syn));
+      });
+      resolve(Array.from(allSynonyms));
+    });
+  });
+}
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -78,22 +94,11 @@ app.post('/api/signup', async (req, res) => {
 app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
-  // Try to find an expert
-  function getRelatedTopics(topic) {
-  const lowerTopic = topic.toLowerCase();
-  const related = [lowerTopic];
-  for (const [key, syns] of Object.entries(synonyms)) {
-    if (key === lowerTopic || syns.includes(lowerTopic)) {
-      related.push(key, ...syns);
-    }
-  }
-  return [...new Set(related)];
-}
+  const synonyms = await getSynonyms(topic);
+  synonyms.push(topic); // include the original topic too
 
-const relatedTopics = getRelatedTopics(topic);
-const expert = await User.findOne({
-  expertise: { $in: relatedTopics }
-});
+  const expert = await User.findOne({ expertise: { $in: synonyms } });
+
 
 
   const newQuestion = new Question({
