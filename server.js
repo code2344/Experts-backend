@@ -131,7 +131,48 @@ app.post('/api/signin', async (req, res) => {
   }
 });
 
+//admin get chats
+app.get('/api/admin/chats', async (req, res) => {
+  try {
+    const chats = await Chat.find().sort('-timestamp');
+    const chatMap = {};
 
+    chats.forEach(chat => {
+      if (!chatMap[chat.chatId]) chatMap[chat.chatId] = [];
+      chatMap[chat.chatId].push(chat);
+    });
+
+    res.json({ success: true, chats: chatMap });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+//admin get users
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+//admin edit&update users
+app.post('/api/admin/update-user', async (req, res) => {
+  const { id, name, email, password, isAdmin } = req.body;
+
+  try {
+    const updated = await User.findByIdAndUpdate(
+      id,
+      { name, email, password, isAdmin },
+      { new: true }
+    );
+    res.json({ success: true, user: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 
 // Get questions for expert
