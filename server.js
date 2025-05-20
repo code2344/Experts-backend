@@ -89,19 +89,18 @@ app.post('/api/ask', async (req, res) => {
   });
 
   app.post('/api/signin', async (req, res) => {
-  try {
-    const email = req.body.email + ''; // force string
-    const password = req.body.password + ''; // force string
-    const user = await User.findOne({ email, password }).lean();
+  const { email, password } = req.body;
+  console.log('Received signin:', email, password);
 
+  try {
+    const user = await User.findOne({ email, password });
     if (user) {
-      return res.json({ success: true });
+      res.json({ success: true });
     } else {
-      return res.json({ success: false, message: 'Invalid email or password' });
+      res.json({ success: false, message: 'Invalid credentials' });
     }
   } catch (err) {
-    console.error('SIGNIN ERROR:', err);
-    return res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
