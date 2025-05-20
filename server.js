@@ -113,10 +113,6 @@ app.post('/api/signin', async (req, res) => {
 
 
 
-  await newQuestion.save();
-  res.json({ success: true, question: newQuestion });
-});
-
 // Get questions for expert
 app.get('/api/questions/:email', async (req, res) => {
   const questions = await Question.find({ assignedTo: req.params.email });
