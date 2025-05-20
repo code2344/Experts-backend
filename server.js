@@ -88,7 +88,12 @@ app.post('/api/ask', async (req, res) => {
     assignedTo: expert ? expert.email : null,
   });
 
-  app.post('/api/signin', async (req, res) => {
+  await newQuestion.save();
+  res.json({ success: true, question: newQuestion });
+});
+
+// ✅ FIXED: Signin route is now correctly placed
+app.post('/api/signin', async (req, res) => {
   const { email, password } = req.body;
   console.log('Received signin:', email, password);
 
