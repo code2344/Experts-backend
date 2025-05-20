@@ -89,22 +89,22 @@ app.post('/api/ask', async (req, res) => {
   });
 
   app.post('/api/signin', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.json({ success: false, message: 'Missing email or password' });
-  }
-
   try {
-    const user = await User.findOne({ email, password });
+    const email = req.body.email + ''; // force string
+    const password = req.body.password + ''; // force string
+    const user = await User.findOne({ email, password }).lean();
+
     if (user) {
       return res.json({ success: true });
     } else {
-      return res.json({ success: false, message: 'Invalid credentials' });
+      return res.json({ success: false, message: 'Invalid email or password' });
     }
   } catch (err) {
+    console.error('SIGNIN ERROR:', err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 
