@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Moderation Alert</title>
+  <style>
+    body { font-family: sans-serif; }
+    .box { background: #f8d7da; padding: 1rem; border-radius: 5px; border: 1px solid #f5c6cb; }
+    h2 { color: #721c24; }
+    p { margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>⚠️ Moderation Alert</h2>
+    <p><strong>From:</strong> {{from}}</p>
+    <p><strong>Original Message:</strong> {{originalText}}</p>
+    <p><strong>Filtered Message:</strong> {{filteredText}}</p>
+    <p><strong>Offensive Word:</strong> {{offensiveWord}}</p>
+    <p><strong>Chat ID:</strong> {{chatId}}</p>
+    <hr>
+    <p><strong>User 1 Email:</strong> {{user1Email}}</p>
+    <p><strong>User 1 Account Created:</strong> {{user1Created}}</p>
+    <p><strong>User 2 Email:</strong> {{user2Email}}</p>
+    <p><strong>User 2 Account Created:</strong> {{user2Created}}</p>
+    <hr>
+    <p><strong>Question:</strong> {{question}}</p>
+    <p><strong>Topic:</strong> {{topic}}</p>
+  </div>
+</body>
+</html>
