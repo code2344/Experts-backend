@@ -6,6 +6,11 @@ const cors = require('cors');
 const Filter = require('bad-words');
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
+
+
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -182,6 +187,24 @@ app.post('/api/chat/:chatId', async (req, res) => {
     });
 
     await moderationRecord.save();
+    // Load and compile the email template
+    const templatePath = path.join(__dirname, 'moderationemail.html');
+    let emailTemplate = fs.readFileSync(templatePath, 'utf8');
+
+    // Replace placeholders with actual data
+    emailTemplate = emailTemplate
+      .replace('{{from}}', from)
+      .replace('{{originalText}}', originalText)
+      .replace('{{filteredText}}', filteredText)
+      .replace('{{offensiveWord}}', offensiveWord)
+      .replace('{{chatId}}', chatId)
+      .replace('{{user1Email}}', user1.email)
+      .replace('{{user1Created}}', user1.created.toISOString())
+      .replace('{{user2Email}}', user2.email)
+      .replace('{{user2Created}}', user2.created.toISOString())
+      .replace('{{question}}', questionEntry?.question || '')
+      .replace('{{topic}}', questionEntry?.topic || '');
+
 
     // Send email using Resend
     try {
@@ -189,9 +212,7 @@ app.post('/api/chat/:chatId', async (req, res) => {
         from: process.env.ADMIN_EMAIL,
         to: process.env.ADMIN_EMAIL,
         subject: 'Moderation Alert',
-        html: `
-
-        `
+        html: emailTemplate
       });
       console.log('Moderation alert email sent');
     } catch (error) {
