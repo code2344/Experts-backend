@@ -33,6 +33,9 @@ function getSynonyms(word) {
   });
 }
 
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
@@ -138,7 +141,78 @@ app.post('/api/chat/:chatId', async (req, res) => {
     return res.status(403).json({ success: false, message: 'Chat has ended' });
   }
 
-  const newMsg = new Chat({ chatId, from, text });
+  // Moderation
+  const originalText = text;
+  const filteredText = filter.clean(text);
+
+  // Check if the text was altered (meaning it contained a bad word)
+  if (originalText !== filteredText) {
+    const users = chatId.split('-');
+    const user1 = await User.findOne({ email: users[0] });
+    const user2 = await User.findOne({ email: users[1] });
+    const questionEntry = await Question.findOne({
+      $or: [
+        { askedBy: users[0], assignedTo: users[1] },
+        { askedBy: users[1], assignedTo: users[0] }
+      ]
+    });
+
+    const moderatedUser = from === users[0] ? 1 : 2;
+    const offensiveWord = originalText.split(' ').find(word => filter.isProfane(word));
+
+    const moderationRecord = new Moderation({
+      chatId,
+      from,
+      originalText,
+      filteredText,
+      offensiveWord,
+      user1: {
+        email: user1.email,
+        password: user1.password,
+        created: user1.created
+      },
+      user2: {
+        email: user2.email,
+        password: user2.password,
+        created: user2.created
+      },
+      moderatedUser,
+      question: questionEntry?.question || '',
+      topic: questionEntry?.topic || ''
+    });
+
+    await moderationRecord.save();
+
+    // Send email using Resend
+    try {
+      await resend.emails.send({
+        from: process.env.ADMIN_EMAIL,
+        to: process.env.ADMIN_EMAIL,
+        subject: 'Moderation Alert',
+        text: `
+Offensive message detected:
+
+From: ${from}
+Original: ${originalText}
+Filtered: ${filteredText}
+Offensive Word: ${offensiveWord}
+
+Chat ID: ${chatId}
+User 1: ${user1.email} | Created: ${user1.created}
+User 2: ${user2.email} | Created: ${user2.created}
+
+Question: ${questionEntry?.question}
+Topic: ${questionEntry?.topic}
+        `
+      });
+      console.log('Moderation alert email sent');
+    } catch (error) {
+      console.error('Failed to send moderation email:', error);
+    }
+  }
+
+  // Save filtered message to chat
+  const newMsg = new Chat({ chatId, from, text: filteredText });
   await newMsg.save();
   res.json({ success: true, message: newMsg });
 });
