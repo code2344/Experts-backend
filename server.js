@@ -212,7 +212,7 @@ app.post('/api/chat/:chatId', async (req, res) => {
     // Send email using Resend
     try {
       await resend.emails.send({
-        from: process.env.ADMIN_EMAIL,
+        from: 'mod@scstudios.tech,
         to: process.env.ADMIN_EMAIL,
         subject: 'Moderation Alert',
         html: emailTemplate
