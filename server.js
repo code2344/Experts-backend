@@ -176,21 +176,23 @@ app.post('/api/admin/update-user', async (req, res) => {
 
 app.get('/api/questions', async (req, res) => {
   const email = req.query.email;
-  const user = await db.collection('users').findOne({ email });
-  if (!user) return res.json({ success: false, message: "User not found" });
 
-  let filter = {};
-  if (user.isAdmin) {
-    filter = {};
-  } else if (user.isExpert) {
-    filter = { assignedTo: email };
-  } else {
-    filter = { askedBy: email };
+  try {
+    const asked = await Question.find({ askedBy: email });
+    const assigned = await Question.find({ assignedTo: email });
+
+    // Merge and remove duplicates (if any)
+    const combined = [...asked, ...assigned];
+    const uniqueQuestions = Object.values(
+      Object.fromEntries(combined.map(q => [q._id.toString(), q]))
+    );
+
+    res.json({ success: true, questions: uniqueQuestions });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-
-  const questions = await db.collection('questions').find(filter).toArray();
-  res.json({ success: true, questions });
 });
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
