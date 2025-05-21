@@ -3,10 +3,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const Filter = require('bad-words');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const filter = new Filter();
+filter.replaceWord = (word) => '#'.repeat(word.length);
 
 // Middleware
 app.use(cors());
@@ -28,6 +32,8 @@ function getSynonyms(word) {
     });
   });
 }
+
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -41,6 +47,7 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
+  created: { type: Date, default: Date.now },
   expertise: [String],
   isAdmin: { type: Boolean, default: false } // 👈 Add this
 });
@@ -89,6 +96,8 @@ app.get('/api/chat/:chatId', async (req, res) => {
     ended: session?.ended || false
   });
 });
+
+
 
 app.post('/api/chat/:chatId', async (req, res) => {
   const { from, text } = req.body;
@@ -159,14 +168,14 @@ app.post('/api/ask', async (req, res) => {
 // Signin route (keep this OUTSIDE the ask route!)
 app.post('/api/signin', async (req, res) => {
   const { email, password } = req.body;
-  console.log('Received signin: with email:', email, 'and password: ', password);
 
   try {
     const user = await User.findOne({ email, password });
     if (user) {
-      res.json({ success: true });
+      res.json({ success: true, isAdmin: user.isAdmin });
     } else {
       res.json({ success: false, message: 'Invalid credentials' });
+      console.log('Received signin:', email, password, 'Invalid credentials);
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
