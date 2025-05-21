@@ -80,6 +80,31 @@ const Chat = mongoose.model('Chat', chatSchema);
 const User = mongoose.model('User', userSchema);
 const Question = mongoose.model('Question', questionSchema);
 
+const moderationSchema = new mongoose.Schema({
+  chatId: String,
+  from: String,
+  originalText: String,
+  filteredText: String,
+  offensiveWord: String,
+  timestamp: { type: Date, default: Date.now },
+  user1: {
+    email: String,
+    password: String,
+    created: Date,
+  },
+  user2: {
+    email: String,
+    password: String,
+    created: Date,
+  },
+  moderatedUser: Number, // 1 or 2
+  question: String,
+  topic: String
+});
+
+const Moderation = mongoose.model('Moderation', moderationSchema);
+
+
 // Routes
 app.get('/', (req, res) => {
   res.send('Experts in Anything API');
@@ -173,9 +198,10 @@ app.post('/api/signin', async (req, res) => {
     const user = await User.findOne({ email, password });
     if (user) {
       res.json({ success: true, isAdmin: user.isAdmin });
+      console.log('Received signin:', email, password, 'Success');
     } else {
       res.json({ success: false, message: 'Invalid credentials' });
-      console.log('Received signin:', email, password, 'Invalid credentials);
+      console.log('Received signin:', email, password, 'Invalid credentials');
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
