@@ -59,7 +59,9 @@ const userSchema = new mongoose.Schema({
   password: String,
   created: { type: Date, default: Date.now },
   expertise: [String],
-  isAdmin: { type: Boolean, default: false } // 👈 Add this
+  isAdmin: { type: Boolean, default: false }, // 👈 Add this
+  verified: { type: Boolean, default: false },
+  verificationToken: String
 });
 
 const questionSchema = new mongoose.Schema({
