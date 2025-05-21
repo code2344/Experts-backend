@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid'); // ✅ Used for generating unique chat I
 
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 const filter = new Filter();
 filter.replaceWord = (word) => '#'.repeat(word.length);
@@ -319,9 +319,11 @@ app.post('/api/signin', async (req, res) => {
 
   try {
     const user = await User.findOne({ email, password });
-    if (user) {
+    if (user && user.verified) {
       res.json({ success: true, isAdmin: user.isAdmin });
       console.log('Received signin:', email, password, 'Success');
+    } else if (user && !user.verified) {
+      res.json({ success: false, message: 'Please verify your email first.' });
     } else {
       res.json({ success: false, message: 'Invalid credentials' });
       console.log('Received signin:', email, password, 'Invalid credentials');
