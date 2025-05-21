@@ -52,11 +52,20 @@ const questionSchema = new mongoose.Schema({
   assignedTo: String,
 });
 
+const chatSessionSchema = new mongoose.Schema({
+  chatId: String,
+  ended: { type: Boolean, default: false }
+});
+
+const ChatSession = mongoose.model('ChatSession', chatSessionSchema);
+
+
 const chatSchema = new mongoose.Schema({
   chatId: String,
   from: String,
   text: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  ended: { type: Boolean, default: false }
 });
 
 const Chat = mongoose.model('Chat', chatSchema);
@@ -70,16 +79,49 @@ app.get('/', (req, res) => {
 });
 // Get chat messages
 app.get('/api/chat/:chatId', async (req, res) => {
-  const messages = await Chat.find({ chatId: req.params.chatId }).sort('timestamp');
-  res.json({ success: true, messages });
+  const chatId = req.params.chatId;
+  const messages = await Chat.find({ chatId }).sort('timestamp');
+  const session = await ChatSession.findOne({ chatId });
+
+  res.json({
+    success: true,
+    messages,
+    ended: session?.ended || false
+  });
 });
 
-// Post a new message
 app.post('/api/chat/:chatId', async (req, res) => {
   const { from, text } = req.body;
-  const newMsg = new Chat({ chatId: req.params.chatId, from, text });
+  const chatId = req.params.chatId;
+
+  let session = await ChatSession.findOne({ chatId });
+  if (!session) {
+    session = new ChatSession({ chatId });
+    await session.save();
+  }
+
+  if (session.ended) {
+    return res.status(403).json({ success: false, message: 'Chat has ended' });
+  }
+
+  const newMsg = new Chat({ chatId, from, text });
   await newMsg.save();
   res.json({ success: true, message: newMsg });
+});
+
+//is chat ended
+app.post('/api/chat/:chatId/end', async (req, res) => {
+  const chatId = req.params.chatId;
+  let session = await ChatSession.findOne({ chatId });
+
+  if (!session) {
+    session = new ChatSession({ chatId });
+  }
+
+  session.ended = true;
+  await session.save();
+
+  res.json({ success: true });
 });
 
 
