@@ -247,13 +247,43 @@ app.post('/api/chat/:chatId/end', async (req, res) => {
 });
 
 
-// Signup
 app.post('/api/signup', async (req, res) => {
   const { name, email, password, expertise } = req.body;
-  const user = new User({ name, email, password, expertise });
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) return res.json({ success: false, message: 'Email already exists' });
+
+  const verificationToken = uuidv4();
+
+  const user = new User({
+    name,
+    email,
+    password,
+    expertise,
+    verificationToken
+  });
+
   await user.save();
-  res.json({ success: true, user });
+
+  const verifyLink = `https://code2344.github.io/Experts-frontend/verify.html?token=${verificationToken}`;
+
+  const html = `
+    <h1>Email Verification</h1>
+    <p>Hi ${name},</p>
+    <p>Click the link to verify your email:</p>
+    <a href="${verifyLink}">${verifyLink}</a>
+  `;
+
+  await resend.emails.send({
+    from: 'verify@scstudios.tech',
+    to: email,
+    subject: 'Verify Your Email',
+    html
+  });
+
+  res.json({ success: true, message: 'User created. Please verify your email.' });
 });
+
 
 // Update your /api/ask route
 app.post('/api/ask', async (req, res) => {
@@ -343,6 +373,19 @@ app.post('/api/admin/update-user', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+app.get('/api/verify', async (req, res) => {
+  const { token } = req.query;
+  const user = await User.findOne({ verificationToken: token });
+  if (!user) return res.status(400).send('Invalid or expired verification token.');
+
+  user.verified = true;
+  user.verificationToken = undefined;
+  await user.save();
+
+  res.send('Your email has been successfully verified. You can now sign in.');
+});
+
 
 app.get('/api/questions', async (req, res) => {
   const email = req.query.email;
