@@ -189,20 +189,8 @@ app.post('/api/chat/:chatId', async (req, res) => {
         from: process.env.ADMIN_EMAIL,
         to: process.env.ADMIN_EMAIL,
         subject: 'Moderation Alert',
-        text: `
-Offensive message detected:
+        html: `
 
-From: ${from}
-Original: ${originalText}
-Filtered: ${filteredText}
-Offensive Word: ${offensiveWord}
-
-Chat ID: ${chatId}
-User 1: ${user1.email} | Created: ${user1.created}
-User 2: ${user2.email} | Created: ${user2.created}
-
-Question: ${questionEntry?.question}
-Topic: ${questionEntry?.topic}
         `
       });
       console.log('Moderation alert email sent');
