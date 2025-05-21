@@ -174,10 +174,21 @@ app.post('/api/admin/update-user', async (req, res) => {
   }
 });
 
+app.get('/api/questions', async (req, res) => {
+  const email = req.query.email;
+  const user = await db.collection('users').findOne({ email });
+  if (!user) return res.json({ success: false, message: "User not found" });
 
-// Get questions for expert
-app.get('/api/questions/:email', async (req, res) => {
-  const questions = await Question.find({ assignedTo: req.params.email });
+  let filter = {};
+  if (user.isAdmin) {
+    filter = {};
+  } else if (user.isExpert) {
+    filter = { assignedTo: email };
+  } else {
+    filter = { askedBy: email };
+  }
+
+  const questions = await db.collection('questions').find(filter).toArray();
   res.json({ success: true, questions });
 });
 
