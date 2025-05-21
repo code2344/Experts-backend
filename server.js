@@ -8,6 +8,7 @@ require('dotenv').config();
 
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid'); // ✅ Used for generating unique chat IDs
 
 
 
@@ -66,6 +67,7 @@ const questionSchema = new mongoose.Schema({
   question: String,
   askedBy: String,
   assignedTo: String,
+  chatId: String
 });
 
 const chatSessionSchema = new mongoose.Schema({
@@ -251,7 +253,7 @@ app.post('/api/signup', async (req, res) => {
   res.json({ success: true, user });
 });
 
-// Ask a question
+// Update your /api/ask route
 app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
@@ -260,16 +262,21 @@ app.post('/api/ask', async (req, res) => {
 
   const expert = await User.findOne({ expertise: { $in: synonyms } });
 
-
+  const chatId = uuidv4(); // ✅ Generate a unique chatId for this question and chat session
 
   const newQuestion = new Question({
     topic,
     question,
     askedBy,
     assignedTo: expert ? expert.email : null,
+    chatId // ✅ Store chatId in question
   });
 
   await newQuestion.save();
+
+  // ✅ Also create a corresponding ChatSession using the same chatId
+  const newSession = new ChatSession({ chatId });
+  await newSession.save();
 
   res.json({ success: true, question: newQuestion });
 });
