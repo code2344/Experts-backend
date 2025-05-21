@@ -218,21 +218,20 @@ app.post('/api/admin/update-user', async (req, res) => {
 
 app.get('/api/questions', async (req, res) => {
   const email = req.query.email;
+  const isAdmin = req.query.isAdmin === 'true';
 
-  try {
-    const asked = await Question.find({ askedBy: email });
-    const assigned = await Question.find({ assignedTo: email });
+  const user = await User.findOne({ email });
+  if (!user) return res.json({ success: false, message: "User not found" });
 
-    // Merge and remove duplicates (if any)
-    const combined = [...asked, ...assigned];
-    const uniqueQuestions = Object.values(
-      Object.fromEntries(combined.map(q => [q._id.toString(), q]))
-    );
-
-    res.json({ success: true, questions: uniqueQuestions });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  let filter = {};
+  if (isAdmin || user.isAdmin) {
+    filter = {}; // Show all questions
+  } else {
+    filter = { $or: [{ askedBy: email }, { assignedTo: email }] };
   }
+
+  const questions = await Question.find(filter);
+  res.json({ success: true, questions });
 });
 
 
