@@ -16,6 +16,7 @@ const port = process.env.PORT || 3000;
 
 const filter = new Filter();
 filter.replaceWord = (word) => '#'.repeat(word.length);
+filter.addWords('testfilter');
 
 // Middleware
 app.use(cors());
