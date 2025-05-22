@@ -61,8 +61,19 @@ const userSchema = new mongoose.Schema({
   expertise: [String],
   isAdmin: { type: Boolean, default: false }, // 👈 Add this
   verified: { type: Boolean, default: false },
-  verificationToken: String
+  verificationToken: String,
+  banned: { type: Boolean, default: false },
+  banReason: String
 });
+
+const ipBanSchema = new mongoose.Schema({
+  ip: String,
+  reason: String,
+  bannedAt: { type: Date, default: Date.now }
+});
+
+const IPBan = mongoose.model('IPBan', ipBanSchema);
+
 
 const questionSchema = new mongoose.Schema({
   topic: String,
