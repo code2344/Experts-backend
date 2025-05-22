@@ -330,11 +330,13 @@ app.post('/api/signin', async (req, res) => {
 
   try {
     const user = await User.findOne({ email, password });
-    if (user && user.verified) {
+    if (user && user.verified && !user.banned) {
       res.json({ success: true, isAdmin: user.isAdmin });
       console.log('Received signin:', email, password, 'Success');
     } else if (user && !user.verified) {
       res.json({ success: false, message: 'Please verify your email first.' });
+    } else if (user.banned) {
+      res.json({ success: false, message: 'You have been banned.' });
     } else {
       res.json({ success: false, message: 'Invalid credentials' });
       console.log('Received signin:', email, password, 'Invalid credentials');
@@ -417,6 +419,49 @@ app.get('/api/questions', async (req, res) => {
   const questions = await Question.find(filter);
   res.json({ success: true, questions });
 });
+
+// Admin ban user
+app.post('/api/admin/ban-user', async (req, res) => {
+  const { email, reason } = req.body;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { email },
+      { banned: true, banReason: reason },
+      { new: true }
+    );
+    if (!user) return res.json({ success: false, message: 'User not found' });
+    res.json({ success: true, message: `User ${email} banned.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.use(async (req, res, next) => {
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const banned = await IPBan.findOne({ ip });
+  if (banned) {
+    return res.status(403).json({ success: false, message: 'Your IP is banned.' });
+  }
+  next();
+});
+
+app.post('/api/admin/ban-ip', async (req, res) => {
+  const { ip, reason } = req.body;
+
+  try {
+    const existing = await IPBan.findOne({ ip });
+    if (existing) return res.json({ success: false, message: 'IP already banned.' });
+
+    const ban = new IPBan({ ip, reason });
+    await ban.save();
+    res.json({ success: true, message: `IP ${ip} banned.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
 
 
 app.listen(port, () => {
