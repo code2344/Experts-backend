@@ -26,6 +26,16 @@ app.use(express.json());
 const natural = require('natural');
 const wordnet = new natural.WordNet();
 
+function getIp(req) {
+  return (
+    req.headers['x-forwarded-for']?.split(',')[0] || 
+    req.connection?.remoteAddress || 
+    req.socket?.remoteAddress || 
+    req.ip
+  );
+}
+
+
 function getSynonyms(word) {
   return new Promise((resolve, reject) => {
     wordnet.lookup(word, (results) => {
@@ -327,19 +337,20 @@ app.post('/api/ask', async (req, res) => {
 // Signin route (keep this OUTSIDE the ask route!)
 app.post('/api/signin', async (req, res) => {
   const { email, password } = req.body;
-
+  const ip = getIp(req);
+  
   try {
     const user = await User.findOne({ email, password });
     if (user && user.verified && !user.banned) {
       res.json({ success: true, isAdmin: user.isAdmin });
-      console.log('Received signin:', email, password, 'Success');
+      console.log('Received signin:', ip, email, password, 'Success');
     } else if (user && !user.verified) {
       res.json({ success: false, message: 'Please verify your email first.' });
     } else if (user.banned) {
       res.json({ success: false, message: 'You have been banned.' });
     } else {
       res.json({ success: false, message: 'Invalid credentials' });
-      console.log('Received signin:', email, password, 'Invalid credentials');
+      console.log('Received signin:', ip, email, password, 'Invalid credentials');
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
