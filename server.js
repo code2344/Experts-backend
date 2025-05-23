@@ -479,6 +479,20 @@ app.post('/api/admin/ban-ip', async (req, res) => {
   }
 });
 
+app.delete('/api/chat/:chatId', async (req, res) => {
+  const chatId = req.params.chatId;
+  const db = client.db('test');
+
+  try {
+    await db.collection('chats').deleteMany({ chatId });
+    await db.collection('questions').deleteOne({ chatId }); // optional, if you want to delete the associated question
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting chat:', err);
+    res.status(500).json({ success: false, error: 'Failed to delete chat.' });
+  }
+});
+
 
 
 
