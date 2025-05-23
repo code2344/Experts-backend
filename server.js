@@ -10,6 +10,13 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid'); // ✅ Used for generating unique chat IDs
 
+const rateLimit = require('express-rate-limit');
+
+const signinLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: 'Too many login attempts. Please try again later.'
+});
 
 
 const app = express();
@@ -335,7 +342,7 @@ app.post('/api/ask', async (req, res) => {
 });
 
 // Signin route (keep this OUTSIDE the ask route!)
-app.post('/api/signin', async (req, res) => {
+app.post('/api/signin', signinLimiter, async (req, res) => {
   const { email, password } = req.body;
   const ip = getIp(req);
   
