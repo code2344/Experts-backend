@@ -26,6 +26,9 @@ const filter = new Filter();
 filter.replaceWord = (word) => '#'.repeat(word.length);
 filter.addWords('testfilter');
 
+
+app.set('trust proxy', 1); // or true
+
 // Middleware
 app.use(cors());
 app.use(express.json());
