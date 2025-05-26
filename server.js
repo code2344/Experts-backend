@@ -497,7 +497,9 @@ app.delete('/api/chat/:chatId', async (req, res) => {
   }
 });
 
-
+app.get('/api/ping', async (req, res) => {
+  res.json({ success: true });
+});
 
 
 app.listen(port, () => {
