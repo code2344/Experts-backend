@@ -111,6 +111,7 @@ const ChatSession = mongoose.model('ChatSession', chatSessionSchema);
 const chatSchema = new mongoose.Schema({
   chatId: String,
   from: String,
+  fromUser: String,
   text: String,
   timestamp: { type: Date, default: Date.now },
   ended: { type: Boolean, default: false }
@@ -166,7 +167,7 @@ app.get('/api/chat/:chatId', async (req, res) => {
 
 
 app.post('/api/chat/:chatId', async (req, res) => {
-  const { from, text } = req.body;
+  const { from, fromUser, text } = req.body;
   const chatId = req.params.chatId;
 
   let session = await ChatSession.findOne({ chatId });
@@ -349,7 +350,7 @@ app.post('/api/signin', signinLimiter, async (req, res) => {
   try {
     const user = await User.findOne({ email, password });
     if (user && user.verified && !user.banned) {
-      res.json({ success: true, isAdmin: user.isAdmin });
+      res.json({ success: true, isAdmin: user.isAdmin, name: user.name});
       console.log('Received signin:', ip, email, password, 'Success');
     } else if (user && !user.verified) {
       res.json({ success: false, message: 'Please verify your email first.' });
