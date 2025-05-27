@@ -27,6 +27,17 @@ filter.replaceWord = (word) => '#'.repeat(word.length);
 filter.addWords('testfilter');
 
 
+const axios = require("axios");
+
+async function getSimilarTopics(topic) {
+  const res = await axios.get("https://api.datamuse.com/words", {
+    params: { ml: topic, max: 50 }
+  });
+
+  // Return a set of lowercase topic names for easy matching
+  return new Set(res.data.map(entry => entry.word.toLowerCase()));
+}
+
 app.set('trust proxy', 1); // or true
 
 // Middleware
@@ -321,10 +332,10 @@ app.post('/api/signup', async (req, res) => {
 app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
-  const synonyms = await getSynonyms(topic);
-  synonyms.push(topic); // include the original topic too
+  const similarTopics = await getSimilarTopics(topic);
+  similarTopics.push(topic); // include the original topic too
 
-  const expert = await User.findOne({ expertise: { $in: synonyms } });
+  const expert = await User.findOne({ expertise: { $in: similarTopics } });
 
   const chatId = uuidv4(); // ✅ Generate a unique chatId for this question and chat session
 
