@@ -510,6 +510,7 @@ app.delete('/api/chat/:chatId', async (req, res) => {
 
 app.get('/api/ping', async (req, res) => {
   res.json({ success: true });
+  console.log("Recieved ping, API is up. ");
 });
 
 
