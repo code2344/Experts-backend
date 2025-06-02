@@ -333,6 +333,7 @@ app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
   const similarTopics = await getSimilarTopics(topic);
+  similarTopics = Array.from(similarTopics); // ✅ Convert Set to Array
   similarTopics.push(topic); // include the original topic too
 
   const expert = await User.findOne({ expertise: { $in: similarTopics } });
