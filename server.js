@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema({
   password: String,
   created: { type: Date, default: Date.now },
   expertise: [String],
-  isAdmin: { type: Boolean, default: false }, // 👈 Add this
+  isAdmin: { type: Boolean, default: false },
   verified: { type: Boolean, default: false },
   verificationToken: String,
   banned: { type: Boolean, default: false },
@@ -161,10 +161,72 @@ const moderationSchema = new mongoose.Schema({
 const Moderation = mongoose.model('Moderation', moderationSchema);
 
 
+// NEW: Feedback Schema and Model
+const feedbackSchema = new mongoose.Schema({
+  appVersion: String,
+  deviceModel: String,
+  osVersion: String,
+  rating: { type: Number, min: 1, max: 5 },
+  comment: String,
+  timestamp: { type: Date, default: Date.now },
+});
+
+const Feedback = mongoose.model('Feedback', feedbackSchema);
+
 // Routes
 app.get('/', (req, res) => {
   res.send('Experts in Anything API');
 });
+
+
+// NEW: Feedback API Route
+app.post('/api/feedback', async (req, res) => {
+  const { appVersion, deviceModel, osVersion, rating, comment } = req.body;
+
+  try {
+    // 1. Create a new feedback document in MongoDB
+    const newFeedback = new Feedback({
+      appVersion,
+      deviceModel,
+      osVersion,
+      rating,
+      comment,
+    });
+    await newFeedback.save();
+
+    // 2. Format the email content
+    const subject = `New App Feedback: ${rating} stars`;
+    const html = `
+      <h1>New Feedback Received</h1>
+      <p><strong>Rating:</strong> ${rating} stars</p>
+      <p><strong>Comment:</strong> ${comment || 'No comment provided.'}</p>
+      <hr>
+      <h3>Technical Details:</h3>
+      <ul>
+        <li><strong>App Version:</strong> ${appVersion}</li>
+        <li><strong>Device:</strong> ${deviceModel}</li>
+        <li><strong>OS Version:</strong> ${osVersion}</li>
+        <li><strong>Submitted At:</strong> ${new Date().toISOString()}</li>
+      </ul>
+    `;
+
+    // 3. Send the email using Resend
+    await resend.emails.send({
+      from: 'feedback@scstudios.tech', // Make sure this is a verified email on Resend
+      to: process.env.ADMIN_EMAIL, // Use an environment variable for the dev email
+      subject: subject,
+      html: html,
+    });
+
+    res.json({ success: true, message: 'Feedback submitted and email sent successfully.' });
+
+  } catch (error) {
+    console.error('Error handling feedback:', error);
+    res.status(500).json({ success: false, message: 'Failed to process feedback.' });
+  }
+});
+
+
 // Get chat messages
 app.get('/api/chat/:chatId', async (req, res) => {
   const chatId = req.params.chatId;
@@ -333,10 +395,13 @@ app.post('/api/ask', async (req, res) => {
   const { topic, question, askedBy } = req.body;
 
   const similarTopics = await getSimilarTopics(topic);
-  similarTopics = Array.from(similarTopics); // ✅ Convert Set to Array
-  similarTopics.push(topic); // include the original topic too
+  // Note: the original code had a bug here, `similarTopics` was a Set
+  // after `getSimilarTopics` but was re-assigned to an array.
+  // We'll keep the original logic for now, but it's worth checking.
+  const similarTopicsArray = Array.from(similarTopics);
+  similarTopicsArray.push(topic); // include the original topic too
 
-  const expert = await User.findOne({ expertise: { $in: similarTopics } });
+  const expert = await User.findOne({ expertise: { $in: similarTopicsArray } });
 
   const chatId = uuidv4(); // ✅ Generate a unique chatId for this question and chat session
 
@@ -518,3 +583,4 @@ app.get('/api/ping', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
