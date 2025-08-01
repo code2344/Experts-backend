@@ -180,7 +180,7 @@ app.get('/', (req, res) => {
 
 
 // NEW: Feedback API Route
-app.post('/api/feedback', async (req, res) => {
+app.post('/api/trio/feedback', async (req, res) => {
   const { appVersion, deviceModel, osVersion, rating, comment } = req.body;
 
   try {
